@@ -1,0 +1,55 @@
+#!/bin/bash
+
+# Apply a window layout template to the active workspace, Windows 11 style,
+# placing the focused window in the chosen zone.
+#
+# Usage: snap-layout <template> [zone]
+#   templates: halves sixty seventy thirds center grid
+#   zone: 0-based, left to right (top to bottom within a column);
+#         defaults to the template's main zone.
+
+template="${1:-}"
+zone="${2:-}"
+workspace=$(hyprctl activeworkspace -j | jq -r '.id')
+[[ $workspace =~ ^-?[0-9]+$ ]] || exit 1
+
+# Each zone is "<orientation> <mfact> <swaps>": the focused window becomes the
+# master, the master area sits on <orientation> with <mfact> of the width, and
+# <swaps> moves the window from the master slot into the stack.
+case $template in
+  halves) zones=("left 0.5 0" "right 0.5 0") main=0 ;;
+  sixty) zones=("left 0.6 0" "left 0.6 1" "left 0.6 2") main=0 ;;
+  seventy) zones=("left 0.7 0" "right 0.3 0") main=0 ;;
+  thirds) zones=("center 0.34 1" "center 0.34 0" "center 0.34 2") main=1 ;;
+  center) zones=("center 0.5 1" "center 0.5 0" "center 0.5 2") main=1 ;;
+  grid) zones=() main=0 ;;
+  *)
+    echo "Usage: snap-layout halves|sixty|seventy|thirds|center|grid [zone]" >&2
+    exit 1
+    ;;
+esac
+
+if [[ $template == "grid" ]]; then
+  layout=dwindle
+else
+  layout=master
+fi
+
+# Persist the layout the same way omarchy-hyprland-workspace-layout-toggle does,
+# so it survives a Hyprland reload.
+layouts_dir="$HOME/.local/state/omarchy/workspace-layouts"
+mkdir -p "$layouts_dir"
+printf 'hl.workspace_rule({ workspace = "%s", layout = "%s" })\n' "$workspace" "$layout" >"$layouts_dir/$workspace.lua"
+hyprctl eval "hl.workspace_rule({ workspace = \"$workspace\", layout = \"$layout\" })" >/dev/null
+
+if [[ $layout == "master" ]]; then
+  [[ $zone =~ ^[0-9]+$ ]] && (( zone < ${#zones[@]} )) || zone=$main
+  read -r orientation mfact swaps <<<"${zones[$zone]}"
+
+  hyprctl dispatch 'hl.dsp.layout("swapwithmaster auto ignoremaster")' >/dev/null
+  hyprctl dispatch "hl.dsp.layout(\"orientation$orientation\")" >/dev/null
+  hyprctl dispatch "hl.dsp.layout(\"mfact exact $mfact\")" >/dev/null
+  for ((i = 0; i < swaps; i++)); do
+    hyprctl dispatch 'hl.dsp.layout("swapnext noloop")' >/dev/null
+  done
+fi
