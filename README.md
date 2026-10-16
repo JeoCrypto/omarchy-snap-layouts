@@ -27,15 +27,14 @@ The layout applies to the active workspace only and survives a Hyprland reload.
 
 With the mouse, hover over a zone and click it.
 
-You can also apply a layout from a script: `snap-layout <halves|sixty|seventy|thirds|center|grid> [zone]`, where zones are numbered from 0, left to right and top to bottom.
+You can also apply a layout from a script with `bin/snap-layout <halves|sixty|seventy|thirds|center|grid> [zone]`, where zones are numbered from 0, left to right and top to bottom.
 
 ## Install
 
+Snap Layouts is an Omarchy shell plugin. It loads only while the picker is open, so it uses no memory the rest of the time:
+
 ```bash
-git clone https://github.com/JeoCrypto/omarchy-snap-layouts
-cd omarchy-snap-layouts
-./install.sh
-qs -c snap-layouts &
+omarchy plugin add https://github.com/JeoCrypto/omarchy-snap-layouts --enable
 ```
 
 ### Keybinding
@@ -43,15 +42,7 @@ qs -c snap-layouts &
 Add to `~/.config/hypr/bindings.lua` (`SUPER + Z` is the Windows 11 shortcut and is free in Omarchy's defaults):
 
 ```lua
-o.bind("SUPER + Z", "Snap layouts", "qs -c snap-layouts ipc call snap toggle")
-```
-
-### Start at login
-
-Add to `~/.config/hypr/autostart.lua`:
-
-```lua
-o.launch_on_start("qs -c snap-layouts")
+o.bind("SUPER + Z", "Snap layouts", "omarchy-shell shell toggle io.github.jeocrypto.snap-layouts")
 ```
 
 ### Frosted blur (recommended)
@@ -61,6 +52,26 @@ Add to `~/.config/hypr/looknfeel.lua`:
 ```lua
 hl.layer_rule({ match = { namespace = "^snap-layouts$" }, blur = true, ignore_alpha = 0.2 })
 ```
+
+### Update and remove
+
+```bash
+omarchy plugin update io.github.jeocrypto.snap-layouts
+omarchy plugin remove io.github.jeocrypto.snap-layouts
+```
+
+After an update, run `omarchy restart shell` so the shell loads the new version.
+
+### Run without the plugin system (optional)
+
+```bash
+git clone https://github.com/JeoCrypto/omarchy-snap-layouts
+cd omarchy-snap-layouts
+./install.sh
+qs -c snap-layouts &
+```
+
+This also puts `snap-layout` in `~/.local/bin`. Bind `qs -c snap-layouts ipc call snap toggle` to a key, and start it at login with `o.launch_on_start("qs -c snap-layouts")` in `~/.config/hypr/autostart.lua`.
 
 ### Language
 

@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "io.github.jeocrypto.snap-layouts",
+  "name": "Snap Layouts",
+  "version": "1.1.0",
+  "author": "JeoCrypto",
+  "description": "A Windows 11-style window layout picker: pick a layout and the zone for the focused window.",
+  "kinds": ["panel"],
+  "entryPoints": {
+    "panel": "SnapLayouts.qml"
+  }
+}
