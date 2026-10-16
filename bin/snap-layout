@@ -20,8 +20,8 @@ case $template in
   halves) zones=("left 0.5 0" "right 0.5 0") main=0 ;;
   sixty) zones=("left 0.6 0" "left 0.6 1" "left 0.6 2") main=0 ;;
   seventy) zones=("left 0.7 0" "right 0.3 0") main=0 ;;
-  thirds) zones=("center 0.34 1" "center 0.34 0" "center 0.34 2") main=1 ;;
-  center) zones=("center 0.5 1" "center 0.5 0" "center 0.5 2") main=1 ;;
+  thirds) zones=("center 0.34 1" "center 0.34 0" "center 0.34 2") main=1 side=0.34 ;;
+  center) zones=("center 0.5 1" "center 0.5 0" "center 0.5 2") main=1 side=0.25 ;;
   grid) zones=() main=0 ;;
   *)
     echo "Usage: snap-layout halves|sixty|seventy|thirds|center|grid [zone]" >&2
@@ -45,6 +45,21 @@ hyprctl eval "hl.workspace_rule({ workspace = \"$workspace\", layout = \"$layout
 if [[ $layout == "master" ]]; then
   [[ $zone =~ ^[0-9]+$ ]] && (( zone < ${#zones[@]} )) || zone=$main
   read -r orientation mfact swaps <<<"${zones[$zone]}"
+
+  # Hyprland only centres the master once it has two stack windows, so with
+  # exactly two tiled windows the centre layouts need their own handling:
+  # the centre zone keeps the master centred, and a side zone puts the
+  # window on that side at the side column's width, the other taking the rest.
+  if [[ $orientation == "center" ]]; then
+    tiled=$(hyprctl clients -j | jq --argjson ws "$workspace" '[.[] | select(.workspace.id == $ws and (.floating | not) and .mapped)] | length')
+    if (( tiled == 2 )); then
+      case $swaps in
+        0) hyprctl eval 'hl.config({ master = { slave_count_for_center_master = 0 } })' >/dev/null ;;
+        1) orientation=left mfact=$side swaps=0 ;;
+        2) orientation=right mfact=$side swaps=0 ;;
+      esac
+    fi
+  fi
 
   hyprctl dispatch 'hl.dsp.layout("swapwithmaster auto ignoremaster")' >/dev/null
   hyprctl dispatch "hl.dsp.layout(\"orientation$orientation\")" >/dev/null
