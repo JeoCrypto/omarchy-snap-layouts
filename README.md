@@ -2,7 +2,7 @@
 
 A Windows 11-style layout picker for [Omarchy](https://omarchy.org) and Hyprland, built with [Quickshell](https://quickshell.org) (which Omarchy already ships). Press a key, pick a layout and choose where the focused window goes.
 
-![Snap Layouts preview](preview.png)
+![Snap Layouts demo: choosing layouts and zones with the keyboard](demo.webp)
 
 | # | Layout | Zones |
 |---|---|---|
