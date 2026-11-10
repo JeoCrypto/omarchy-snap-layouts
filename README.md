@@ -115,4 +115,4 @@ The workspace's layout is saved in `~/.local/state/omarchy/workspace-layouts/`, 
   <a href="https://github.com/JeoCrypto/omarchy-snap-layouts">Snap Layouts</a>
 </p>
 
-<p align="center"><sub>MIT licence</sub></p>
+<p align="center"><sub>Contributed by <a href="https://vgsi.pt">VGSI</a> · MIT licence</sub></p>
