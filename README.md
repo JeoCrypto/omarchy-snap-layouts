@@ -54,11 +54,12 @@ The layout applies to the active workspace only and survives a Hyprland reload.
 
 | Key | Action |
 |---|---|
-| `1`–`6` | Pick a layout (the highlight starts on its main zone) |
+| `1`–`6` | Pick a layout; its zones are then numbered (Grid applies straight away) |
+| `1`–`3` (after a layout) | Put the focused window in that numbered zone, as in Windows 11 |
 | `←` `↑` `↓` `→` | Move the highlight to the neighbouring zone |
 | `Enter` / `Space` | Put the focused window in the highlighted zone |
 | `Tab` / `Shift+Tab` | Next / previous layout |
-| `Esc` | Close |
+| `Esc` | Back to the layouts after picking one, otherwise close |
 
 With the mouse, hover over a zone and click it.
 
