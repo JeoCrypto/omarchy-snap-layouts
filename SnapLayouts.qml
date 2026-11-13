@@ -43,9 +43,11 @@ Item {
   // ---- Labels ----
   readonly property var strings: ({
     en: { halves: "Halves", sixty: "60 / 40", seventy: "70 / 30", thirds: "Three columns", center: "Center focus", grid: "Grid",
-          hint: "1–6 layout    ← ↑ ↓ → zone    Enter apply    Esc close" },
+          hint: "1–6 layout    ← ↑ ↓ → zone    Enter apply    Esc close",
+          zoneHint: "Press a zone number    ← ↑ ↓ → zone    Enter apply    Esc back" },
     pt: { halves: "Metades", sixty: "60 / 40", seventy: "70 / 30", thirds: "Três colunas", center: "Foco ao centro", grid: "Grelha",
-          hint: "1–6 modelo    ← ↑ ↓ → zona    Enter aplicar    Esc fechar" }
+          hint: "1–6 modelo    ← ↑ ↓ → zona    Enter aplicar    Esc fechar",
+          zoneHint: "Número da zona    ← ↑ ↓ → zona    Enter aplicar    Esc voltar" }
   })
   property string language: "en"
   readonly property var t: strings[language] || strings.en
@@ -73,8 +75,11 @@ Item {
   property bool opened: false
   property int selected: 0
   property int selectedZone: 0
+  // Windows-style two-step keys: a first number picks the layout and numbers
+  // its zones; a second number puts the focused window in that zone.
+  property bool zoneMode: false
 
-  function open(payloadJson) { themeColors.reload(); languageFile.reload(); select(0); opened = true }
+  function open(payloadJson) { themeColors.reload(); languageFile.reload(); select(0); zoneMode = false; opened = true }
   function close() { opened = false }
 
   // As a plugin, ask the shell to hide (and unload) the picker; standalone, just close.
@@ -88,6 +93,7 @@ Item {
     if (index < 0 || index >= templates.length) return
     selected = index
     selectedZone = templates[index].main
+    zoneMode = false
   }
 
   // Move the zone cursor to the nearest zone in a direction (dx, dy).
@@ -107,6 +113,18 @@ Item {
       if (score < bestScore) { bestScore = score; best = i }
     }
     if (best >= 0) selectedZone = best
+  }
+
+  // Number keys: layout first, then zone.
+  function pressNumber(n) {
+    if (!zoneMode) {
+      if (n >= templates.length) return
+      select(n)
+      if (templates[n].main < 0) apply(n, -1)
+      else zoneMode = true
+    } else if (n < templates[selected].zones.length) {
+      apply(selected, n)
+    }
   }
 
   // zone: which zone of the template the focused window goes to (-1 = main)
@@ -140,8 +158,8 @@ Item {
       anchors.fill: parent
       focus: true
       Keys.onPressed: (e) => {
-        if (e.key === Qt.Key_Escape) root.dismiss()
-        else if (e.key >= Qt.Key_1 && e.key <= Qt.Key_6) root.select(e.key - Qt.Key_1)
+        if (e.key === Qt.Key_Escape) { if (root.zoneMode) root.zoneMode = false; else root.dismiss() }
+        else if (e.key >= Qt.Key_1 && e.key <= Qt.Key_9) root.pressNumber(e.key - Qt.Key_1)
         else if (e.key === Qt.Key_Left) root.moveZone(-1, 0)
         else if (e.key === Qt.Key_Right) root.moveZone(1, 0)
         else if (e.key === Qt.Key_Up) root.moveZone(0, -1)
@@ -223,6 +241,16 @@ Item {
                     ? Qt.rgba(root.accent.r, root.accent.g, root.accent.b, tile.active ? 0.95 : 0.7)
                     : Qt.rgba(root.fg.r, root.fg.g, root.fg.b, tile.active ? 0.38 : 0.22)
 
+                  Text {
+                    anchors.centerIn: parent
+                    visible: tile.active && root.zoneMode
+                    text: parent.index + 1
+                    color: parent.lit ? root.bg : root.fg
+                    font.family: "sans-serif"
+                    font.pixelSize: 12
+                    font.bold: true
+                  }
+
                   HoverHandler {
                     onHoveredChanged: {
                       if (!hovered) return
@@ -257,7 +285,7 @@ Item {
         id: hint
         anchors.horizontalCenter: parent.horizontalCenter
         y: row.y + row.height + 2
-        text: root.t.hint
+        text: root.zoneMode ? root.t.zoneHint : root.t.hint
         color: Qt.rgba(root.fg.r, root.fg.g, root.fg.b, 0.5)
         font.family: "sans-serif"
         font.pixelSize: 11
